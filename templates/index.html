@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Handwritten Digit Classifier — MNIST CNN</title>
+    <meta name="description" content="Interactive handwritten digit classifier powered by a Convolutional Neural Network, FastAPI, and TensorFlow/Keras." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+    <div class="ambient-glow" aria-hidden="true"></div>
+
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero-pill">
+               
+                <span class="pill-divider"><</span>
+                <span>Convolutional Neural Network</span>
+                <span class="pill-divider">•</span>
+                <span>MNIST</span>
+                <span class="pill-divider">•</span>
+                <span>99.2% Acc</span>
+                <span class="pill-divider">></span>
+            </div>
+            <h1 class="hero-title">"<"Handwritten Digit Classifier">"</h1>
+            <p class="hero-subtitle">
+                Draw any single digit (0–9) on the interactive pad. The deep learning model will analyze stroke geometry and predict in real-time.
+            </p>
+        </header>
+
+        <section class="controls-bar" aria-label="Canvas and inference controls">
+            <div class="control-group brush-group">
+                <span class="control-label">BRUSH SIZE</span>
+                <span class="brush-badge" id="brush-value">22px</span>
+                <input
+                    type="range"
+                    id="brush-size"
+                    class="brush-slider"
+                    min="8"
+                    max="40"
+                    value="22"
+                    aria-label="Brush size in pixels"
+                />
+                <div class="brush-preview-ring" aria-hidden="true">
+                    <span class="brush-preview-dot" id="brush-preview-dot"></span>
+                </div>
+            </div>
+
+            <div class="control-divider" aria-hidden="true"></div>
+
+            <div class="control-group mode-group">
+                <span class="control-label">INFERENCE MODE</span>
+                <label class="toggle-wrap" for="realtime-toggle">
+                    <input type="checkbox" id="realtime-toggle" checked />
+                    <span class="toggle-track">
+                        <span class="toggle-thumb"></span>
+                    </span>
+                    <span class="mode-text" id="mode-label">Realtime</span>
+                </label>
+            </div>
+
+            <div class="control-divider" aria-hidden="true"></div>
+
+            <div class="control-actions">
+                <button type="button" id="undo-btn" class="btn btn-secondary" disabled>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 14 4 9l5-5" />
+                        <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+                    </svg>
+                    <span>Undo</span>
+                </button>
+                <button type="button" id="clear-btn" class="btn btn-secondary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                    <span>Clear</span>
+                </button>
+                <button type="button" id="predict-btn" class="btn btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="6 3 20 12 6 21 6 3" />
+                    </svg>
+                    <span>Predict</span>
+                </button>
+            </div>
+        </section>
+
+        <main class="workspace-grid">
+            <section class="panel canvas-panel" aria-label="Drawing canvas">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <span class="panel-icon panel-icon-blue" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                        </span>
+                        <h2 class="panel-title">Drawing Canvas</h2>
+                    </div>
+                    <span class="resolution-badge">280 × 280 px</span>
+                </div>
+
+                <div class="canvas-stage">
+                    <div class="canvas-frame">
+                        <canvas
+                            id="digit-canvas"
+                            width="280"
+                            height="280"
+                            aria-label="Handwritten digit drawing pad"
+                        ></canvas>
+                        <div class="canvas-reticles" aria-hidden="true">
+                            <span class="reticle reticle-tl"></span>
+                            <span class="reticle reticle-tr"></span>
+                            <span class="reticle reticle-bl"></span>
+                            <span class="reticle reticle-br"></span>
+                        </div>
+                    </div>
+
+                    <div class="shortcuts-hint" aria-label="Keyboard shortcuts">
+                        <span class="shortcut-item"><kbd>C</kbd> Clear</span>
+                        <span class="shortcut-item"><kbd>Z</kbd> Undo</span>
+                        <span class="shortcut-item"><kbd>Enter</kbd> Predict</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel output-panel" aria-label="Inference output">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <span class="panel-icon panel-icon-emerald" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="m9 12 2 2 4-4" />
+                            </svg>
+                        </span>
+                        <h2 class="panel-title">Inference Output</h2>
+                    </div>
+                    <span class="status-badge" id="status-badge">AI Ready</span>
+                </div>
+
+                <div class="prediction-summary">
+                    <div class="prediction-digit-block">
+                        <span class="summary-label">PREDICTED DIGIT</span>
+                        <div class="predicted-digit" id="predicted-digit">—</div>
+                    </div>
+
+                    <div class="prediction-confidence-block">
+                        <span class="summary-label">CONFIDENCE</span>
+                        <div class="confidence-value" id="confidence-value">0.0%</div>
+                        <div class="confidence-track" aria-hidden="true">
+                            <div class="confidence-fill" id="confidence-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="distribution-section">
+                    <div class="distribution-header">SOFTMAX PROBABILITY DISTRIBUTION (0-9)</div>
+                    <div class="probability-list" id="probability-list"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p class="footer-credit">
+                Designed &amp; Engineered by <strong>Ujjwal Raj</strong>
+                <span class="footer-sep">•</span>
+                FastAPI • TensorFlow / Keras • HTML5 Canvas
+            </p>
+            <!-- Replace href with your GitHub repository URL -->
+            <a
+                href="https://github.com/UjjwalRaj2025"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="github-btn"
+                aria-label="View source on GitHub"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a10.96 10.96 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                </svg>
+                <span>GitHub</span>
+            </a>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
